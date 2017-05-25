@@ -1,1 +1,1 @@
-"# tayyip_bot" 
+Telegram bot to get audio quotes from Tayyip.
