@@ -1,9 +1,9 @@
-import telebot
 import time
 import sys
 import random
-import logging
+import telebot
 from telebot import types
+import logging
 import requests
 import json
 import unicodedata
@@ -16,7 +16,7 @@ bot = telebot.TeleBot(API_TOKEN)
 telebot.logger.setLevel(logging.DEBUG)
 
 # Frequency of the random quote
-LUCK_PERCENT = 2
+LUCK_PERCENT = {}  # {"chat_id" : percentage}
 
 
 def init():
@@ -39,13 +39,11 @@ def query_text(inline_query):
     try:
         results = process.extract(inline_query.query, sounds, limit=10)
         result_list = []
-
         for result in results:
             i = results.index(result)
             r = types.InlineQueryResultAudio(
                 str(i + 1), urls[sounds.index(result[0])], result[0])
             result_list.append(r)
-
         bot.answer_inline_query(inline_query.id, result_list)
     except Exception as e:
         print(e)
@@ -53,11 +51,13 @@ def query_text(inline_query):
 
 @bot.message_handler(func=lambda message: message.text.startswith('/') == False)
 def echo_message(message):
+    chat_id = message.chat.id
     lucky_number = random.randint(1, 100)
-    if lucky_number <= LUCK_PERCENT:
+    luck = LUCK_PERCENT[chat_id] if chat_id in LUCK_PERCENT else 2 # default
+    if lucky_number <= luck:
         text = unicodedata.normalize(
             'NFKD', message.text).encode('ascii', 'ignore')
-        if lucky_number <= LUCK_PERCENT / 2:
+        if lucky_number <= luck / 2:
             guess = process.extractOne(
                 text, sounds, scorer=fuzz.QRatio)
         else:
@@ -71,13 +71,14 @@ def echo_message(message):
                            reply_to_message_id=message.message_id)
 
 
-@bot.message_handler(commands=['luck', 'oran', 'percentage', 'kader'])
+@bot.message_handler(commands=['luck', 'oran', 'percentage', 'kader', 'kismet'])
 def command_image(message):
     global LUCK_PERCENT
+    chat_id = message.chat.id
     text = message.text
     if text[-1].isdigit():
-        LUCK_PERCENT = int(filter(unicode.isdigit, text))
-        bot.reply_to(message, "Oran: %" + str(LUCK_PERCENT))
+        LUCK_PERCENT.update({chat_id: int(filter(unicode.isdigit, text))})
+        bot.reply_to(message, "Oran: %" + str(LUCK_PERCENT[chat_id]))
 
 
 def main_loop():
