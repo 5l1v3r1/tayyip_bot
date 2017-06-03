@@ -1,16 +1,22 @@
 import telebot
 import time
 import sys
+import random
 import logging
 from telebot import types
 import requests
 import json
+import unicodedata
+from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-API_TOKEN = ''
+API_TOKEN = '<TELEGRAM_API>'
 
 bot = telebot.TeleBot(API_TOKEN)
 telebot.logger.setLevel(logging.DEBUG)
+
+# Frequency of the random quote
+LUCK_PERCENT = 2
 
 
 def init():
@@ -31,7 +37,7 @@ sounds, urls = zip(*init())
 @bot.inline_handler(lambda query: len(query.query) > 2)
 def query_text(inline_query):
     try:
-        results = process.extract(inline_query.query, sounds, limit=4)
+        results = process.extract(inline_query.query, sounds, limit=10)
         result_list = []
 
         for result in results:
@@ -43,6 +49,35 @@ def query_text(inline_query):
         bot.answer_inline_query(inline_query.id, result_list)
     except Exception as e:
         print(e)
+
+
+@bot.message_handler(func=lambda message: message.text.startswith('/') == False)
+def echo_message(message):
+    lucky_number = random.randint(1, 100)
+    if lucky_number <= LUCK_PERCENT:
+        text = unicodedata.normalize(
+            'NFKD', message.text).encode('ascii', 'ignore')
+        if lucky_number <= LUCK_PERCENT / 2:
+            guess = process.extractOne(
+                text, sounds, scorer=fuzz.QRatio)
+        else:
+            guess = process.extractOne(text, sounds)
+        url = urls[sounds.index(guess[0])]
+        res = requests.get(url)
+        with open('temp.mp3', 'wb') as f:
+            f.write(res.content)
+        with open('temp.mp3', 'rb') as f:
+            bot.send_voice(message.chat.id, f,
+                           reply_to_message_id=message.message_id)
+
+
+@bot.message_handler(commands=['luck', 'oran', 'percentage', 'kader'])
+def command_image(message):
+    global LUCK_PERCENT
+    text = message.text
+    if text[-1].isdigit():
+        LUCK_PERCENT = int(filter(unicode.isdigit, text))
+        bot.reply_to(message, "Oran: %" + str(LUCK_PERCENT))
 
 
 def main_loop():
