@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 import sys
 import random
@@ -10,7 +11,7 @@ import unicodedata
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-API_TOKEN = '<TELEGRAM_API>'
+API_TOKEN = '255281134:AAE_qIxzZlZAw3tlhmOUiALeddop_qOp0g4'
 
 bot = telebot.TeleBot(API_TOKEN)
 telebot.logger.setLevel(logging.DEBUG)
@@ -52,7 +53,7 @@ def query_text(inline_query):
 @bot.message_handler(func=lambda message: message.text.startswith('/') == False)
 def echo_message(message):
     chat_id = message.chat.id
-    lucky_number = random.randint(1, 100)
+    lucky_number = random.randint(1, 1000)
     luck = LUCK_PERCENT[chat_id] if chat_id in LUCK_PERCENT else 2 # default
     if lucky_number <= luck:
         text = unicodedata.normalize(
@@ -71,14 +72,14 @@ def echo_message(message):
                            reply_to_message_id=message.message_id)
 
 
-@bot.message_handler(commands=['luck', 'oran', 'percentage', 'kader', 'kismet'])
+@bot.message_handler(commands=['luck', 'oran', 'kader', 'kismet'])
 def command_image(message):
     global LUCK_PERCENT
     chat_id = message.chat.id
     text = message.text
     if text[-1].isdigit():
         LUCK_PERCENT.update({chat_id: int(filter(unicode.isdigit, text))})
-        bot.reply_to(message, "Oran: %" + str(LUCK_PERCENT[chat_id]))
+        bot.reply_to(message, "Oran: ‰" + str(LUCK_PERCENT[chat_id]))
 
 
 def main_loop():
