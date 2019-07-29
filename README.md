@@ -1,1 +1,1 @@
-Telegram bot to get audio quotes from Tayyip.
+Telegram bot to get seemingly random audio quotes from Tayyip.
